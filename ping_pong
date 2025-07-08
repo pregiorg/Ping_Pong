@@ -128,17 +128,17 @@ class PingPongGame:
             
             
             if self.ball.rect.colliderect(self.player1.rect):
-                if self.ball.speed_x < 0:  # Only bounce if moving towards paddle
+                if self.ball.speed_x < 0:  
                     self.ball.bounce_x()
             
             if self.ball.rect.colliderect(self.player2.rect):
-                if self.ball.speed_x > 0:  # Only bounce if moving towards paddle
+                if self.ball.speed_x > 0:  
                     self.ball.bounce_x()
             
             
             if self.ball.x < 0:
                 self.player2_score += 1
-                if self.player2_score >= 5:  # Win condition
+                if self.player2_score >= 5:  
                     self.game_over = True
                     self.winner = "Player 2"
                 else:
@@ -146,7 +146,7 @@ class PingPongGame:
             
             elif self.ball.x > SCREEN_WIDTH:
                 self.player1_score += 1
-                if self.player1_score >= 5:  # Win condition
+                if self.player1_score >= 5: 
                     self.game_over = True
                     self.winner = "Player 1"
                 else:
