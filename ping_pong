@@ -1,0 +1,222 @@
+import pygame
+import sys
+
+
+pygame.init()
+
+
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+BALL_SIZE = 20
+PADDLE_WIDTH = 20
+PADDLE_HEIGHT = 100
+PADDLE_SPEED = 8
+BALL_SPEED_X = 6
+BALL_SPEED_Y = 6
+
+
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+BLUE = (0, 100, 255)
+RED = (255, 100, 100)
+
+class Paddle:
+    def __init__(self, x, y, color):
+        self.x = x
+        self.y = y
+        self.width = PADDLE_WIDTH
+        self.height = PADDLE_HEIGHT
+        self.speed = PADDLE_SPEED
+        self.color = color
+        self.rect = pygame.Rect(x, y, self.width, self.height)
+    
+    def move_up(self):
+        if self.y > 0:
+            self.y -= self.speed
+            self.rect.y = self.y
+    
+    def move_down(self):
+        if self.y < SCREEN_HEIGHT - self.height:
+            self.y += self.speed
+            self.rect.y = self.y
+    
+    def draw(self, screen):
+        pygame.draw.rect(screen, self.color, self.rect)
+
+class Ball:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.size = BALL_SIZE
+        self.speed_x = BALL_SPEED_X
+        self.speed_y = BALL_SPEED_Y
+        self.rect = pygame.Rect(x, y, self.size, self.size)
+    
+    def move(self):
+        self.x += self.speed_x
+        self.y += self.speed_y
+        self.rect.x = self.x
+        self.rect.y = self.y
+        
+        
+        if self.y <= 0 or self.y >= SCREEN_HEIGHT - self.size:
+            self.speed_y = -self.speed_y
+    
+    def bounce_x(self):
+        self.speed_x = -self.speed_x
+    
+    def reset(self):
+        self.x = SCREEN_WIDTH // 2
+        self.y = SCREEN_HEIGHT // 2
+        self.rect.x = self.x
+        self.rect.y = self.y
+        self.speed_x = BALL_SPEED_X if self.speed_x > 0 else -BALL_SPEED_X
+    
+    def draw(self, screen):
+        pygame.draw.ellipse(screen, WHITE, self.rect)
+
+class PingPongGame:
+    def __init__(self):
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        pygame.display.set_caption("Ping Pong Game - Παιχνίδι Ping Pong")
+        self.clock = pygame.time.Clock()
+        
+        
+        self.player1 = Paddle(50, SCREEN_HEIGHT // 2 - PADDLE_HEIGHT // 2, BLUE)
+        self.player2 = Paddle(SCREEN_WIDTH - 70, SCREEN_HEIGHT // 2 - PADDLE_HEIGHT // 2, RED)
+        
+        
+        self.ball = Ball(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+        
+       
+        self.player1_score = 0
+        self.player2_score = 0
+        self.font = pygame.font.Font(None, 74)
+        
+        
+        self.game_over = False
+        self.winner = None
+    
+    def handle_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_r and self.game_over:
+                    self.reset_game()
+        
+        
+        keys = pygame.key.get_pressed()
+        
+        
+        if keys[pygame.K_w]:
+            self.player1.move_up()
+        if keys[pygame.K_s]:
+            self.player1.move_down()
+        
+        
+        if keys[pygame.K_UP]:
+            self.player2.move_up()
+        if keys[pygame.K_DOWN]:
+            self.player2.move_down()
+        
+        return True
+    
+    def update(self):
+        if not self.game_over:
+            self.ball.move()
+            
+            
+            if self.ball.rect.colliderect(self.player1.rect):
+                if self.ball.speed_x < 0:  # Only bounce if moving towards paddle
+                    self.ball.bounce_x()
+            
+            if self.ball.rect.colliderect(self.player2.rect):
+                if self.ball.speed_x > 0:  # Only bounce if moving towards paddle
+                    self.ball.bounce_x()
+            
+            
+            if self.ball.x < 0:
+                self.player2_score += 1
+                if self.player2_score >= 5:  # Win condition
+                    self.game_over = True
+                    self.winner = "Player 2"
+                else:
+                    self.ball.reset()
+            
+            elif self.ball.x > SCREEN_WIDTH:
+                self.player1_score += 1
+                if self.player1_score >= 5:  # Win condition
+                    self.game_over = True
+                    self.winner = "Player 1"
+                else:
+                    self.ball.reset()
+    
+    def draw(self):
+        self.screen.fill(BLACK)
+        
+        
+        pygame.draw.aaline(self.screen, WHITE, 
+                          (SCREEN_WIDTH // 2, 0), 
+                          (SCREEN_WIDTH // 2, SCREEN_HEIGHT))
+        
+        
+        self.player1.draw(self.screen)
+        self.player2.draw(self.screen)
+        self.ball.draw(self.screen)
+        
+        
+        score_text = self.font.render(f"{self.player1_score}  {self.player2_score}", 
+                                     True, WHITE)
+        score_rect = score_text.get_rect(center=(SCREEN_WIDTH // 2, 50))
+        self.screen.blit(score_text, score_rect)
+        
+        
+        controls_font = pygame.font.Font(None, 36)
+        controls1 = controls_font.render("Player 1: W/S", True, BLUE)
+        controls2 = controls_font.render("Player 2: ↑/↓", True, RED)
+        self.screen.blit(controls1, (10, 10))
+        self.screen.blit(controls2, (SCREEN_WIDTH - 200, 10))
+        
+        
+        if self.game_over:
+            overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+            overlay.set_alpha(128)
+            overlay.fill(BLACK)
+            self.screen.blit(overlay, (0, 0))
+            
+            winner_text = self.font.render(f"{self.winner} Wins!", True, WHITE)
+            winner_rect = winner_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+            self.screen.blit(winner_text, winner_rect)
+            
+            restart_text = controls_font.render("Press R to restart", True, WHITE)
+            restart_rect = restart_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 50))
+            self.screen.blit(restart_text, restart_rect)
+        
+        pygame.display.flip()
+    
+    def reset_game(self):
+        self.player1_score = 0
+        self.player2_score = 0
+        self.game_over = False
+        self.winner = None
+        self.ball.reset()
+        self.player1.y = SCREEN_HEIGHT // 2 - PADDLE_HEIGHT // 2
+        self.player2.y = SCREEN_HEIGHT // 2 - PADDLE_HEIGHT // 2
+        self.player1.rect.y = self.player1.y
+        self.player2.rect.y = self.player2.y
+    
+    def run(self):
+        running = True
+        while running:
+            running = self.handle_events()
+            self.update()
+            self.draw()
+            self.clock.tick(60)
+        
+        pygame.quit()
+        sys.exit()
+
+if __name__ == "__main__":
+    game = PingPongGame()
+    game.run()
