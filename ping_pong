@@ -1,5 +1,6 @@
 import pygame
 import sys
+import os
 
 
 pygame.init()
@@ -19,6 +20,24 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 BLUE = (0, 100, 255)
 RED = (255, 100, 100)
+
+
+def load_image(filename, size=None):
+    """Load an image with error handling"""
+    try:
+        image = pygame.image.load(filename)
+        if size:
+            image = pygame.transform.scale(image, size)
+        return image
+    except pygame.error:
+        print(f"Could not load image: {filename}")
+        return None
+
+
+BALL_IMAGE = load_image("ball.png", (BALL_SIZE, BALL_SIZE))
+PADDLE1_IMAGE = load_image("paddle1.png", (PADDLE_WIDTH, PADDLE_HEIGHT))
+PADDLE2_IMAGE = load_image("paddle2.png", (PADDLE_WIDTH, PADDLE_HEIGHT))
+BACKGROUND_IMAGE = load_image("background.png", (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 class Paddle:
     def __init__(self, x, y, color):
@@ -50,6 +69,7 @@ class Ball:
         self.size = BALL_SIZE
         self.speed_x = BALL_SPEED_X
         self.speed_y = BALL_SPEED_Y
+        self.image = BALL_IMAGE
         self.rect = pygame.Rect(x, y, self.size, self.size)
     
     def move(self):
@@ -73,7 +93,11 @@ class Ball:
         self.speed_x = BALL_SPEED_X if self.speed_x > 0 else -BALL_SPEED_X
     
     def draw(self, screen):
-        pygame.draw.ellipse(screen, WHITE, self.rect)
+        if self.image:
+            screen.blit(self.image, (self.x, self.y))
+        else:
+            
+            pygame.draw.ellipse(screen, WHITE, self.rect)
 
 class PingPongGame:
     def __init__(self):
@@ -82,8 +106,8 @@ class PingPongGame:
         self.clock = pygame.time.Clock()
         
         
-        self.player1 = Paddle(50, SCREEN_HEIGHT // 2 - PADDLE_HEIGHT // 2, BLUE)
-        self.player2 = Paddle(SCREEN_WIDTH - 70, SCREEN_HEIGHT // 2 - PADDLE_HEIGHT // 2, RED)
+        self.player1 = Paddle(50, SCREEN_HEIGHT // 2 - PADDLE_HEIGHT // 2, BLUE, PADDLE1_IMAGE)
+        self.player2 = Paddle(SCREEN_WIDTH - 70, SCREEN_HEIGHT // 2 - PADDLE_HEIGHT // 2, RED, PADDLE2_IMAGE)
         
         
         self.ball = Ball(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
@@ -108,13 +132,13 @@ class PingPongGame:
         
         keys = pygame.key.get_pressed()
         
-        
+       
         if keys[pygame.K_w]:
             self.player1.move_up()
         if keys[pygame.K_s]:
             self.player1.move_down()
         
-        
+       
         if keys[pygame.K_UP]:
             self.player2.move_up()
         if keys[pygame.K_DOWN]:
@@ -135,7 +159,7 @@ class PingPongGame:
                 if self.ball.speed_x > 0:  
                     self.ball.bounce_x()
             
-            
+           
             if self.ball.x < 0:
                 self.player2_score += 1
                 if self.player2_score >= 5:  
@@ -146,21 +170,27 @@ class PingPongGame:
             
             elif self.ball.x > SCREEN_WIDTH:
                 self.player1_score += 1
-                if self.player1_score >= 5: 
+                if self.player1_score >= 5:  
                     self.game_over = True
                     self.winner = "Player 1"
                 else:
                     self.ball.reset()
     
     def draw(self):
-        self.screen.fill(BLACK)
+        # Draw background
+        if BACKGROUND_IMAGE:
+            self.screen.blit(BACKGROUND_IMAGE, (0, 0))
+        else:
+            
+            self.screen.fill(BLACK)
         
         
-        pygame.draw.aaline(self.screen, WHITE, 
-                          (SCREEN_WIDTH // 2, 0), 
-                          (SCREEN_WIDTH // 2, SCREEN_HEIGHT))
+        if not BACKGROUND_IMAGE:
+            pygame.draw.aaline(self.screen, WHITE, 
+                              (SCREEN_WIDTH // 2, 0), 
+                              (SCREEN_WIDTH // 2, SCREEN_HEIGHT))
         
-        
+       
         self.player1.draw(self.screen)
         self.player2.draw(self.screen)
         self.ball.draw(self.screen)
@@ -216,6 +246,7 @@ class PingPongGame:
         
         pygame.quit()
         sys.exit()
+
 
 if __name__ == "__main__":
     game = PingPongGame()
